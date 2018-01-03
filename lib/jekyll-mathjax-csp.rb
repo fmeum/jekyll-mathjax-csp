@@ -1,6 +1,8 @@
 require "jekyll"
 require "digest"
 require "html/pipeline"
+require "open3"
+require "set"
 
 module Jekyll
   class Mathifier
@@ -10,16 +12,25 @@ module Jekyll
 
     class << self
 
-      def addInlineStyle(svg_tag, inline_styles)
-        inline_style = svg_tag["style"]
-        Jekyll.logger.warn "inline style: " + inline_style
-        digest = Digest::MD5.hexdigest(inline_style)
-        inline_styles[digest] = inline_style
+      def extractInlineStyles(parsed_doc)
+        inline_styles = {}
+        svg_tags = parsed_doc.css("svg[style]")
+        for svg_tag in svg_tags do
+          inline_style = svg_tag["style"]
+          digest = Digest::MD5.hexdigest(inline_style)
+          inline_styles[digest] = inline_style
 
-        digest_class = "mathjax-inline-#{digest}"
-        svg_tag["class"] = digest_class
-        svg_tag.remove_attribute("style")
-        Jekyll.logger.warn "new class: " + digest_class
+          digest_class = "mathjax-inline-#{digest}"
+          svg_tag["class"] = "#{svg_tag["class"] || ""} #{digest_class}"
+          svg_tag.remove_attribute("style")
+        end
+        return inline_styles
+      end
+
+      def hashStyleTag(style_tag)
+        csp_digest = "sha256-#{Digest::SHA256.base64digest(style_tag.content)}"
+        style_tag.add_previous_sibling("<!-- '#{csp_digest}' -->")
+        @@config["csp_hashes"].add(csp_digest)
       end
 
       def compileStyleElement(parsed_doc, inline_styles)
@@ -28,25 +39,45 @@ module Jekyll
           style_content += ".mathjax-inline-#{digest}{#{inline_style}}"
         end
         style_tag = parsed_doc.at_css("head").add_child("<style>#{style_content}</style>")[0]
-
-        csp_digest = "'sha256-#{Digest::SHA256.base64digest(style_content)}''"
-        style_tag.add_previous_sibling("<!-- #{csp_digest} -->")
+        hashStyleTag(style_tag)
       end
 
-      def mathify(doc)
-        Jekyll.logger.warn "Mathify called"
+      def run_mjpage(doc)
+        mathified = ""
+        exit_status = 0
+        Open3.popen2("node_modules/mathjax-node-page/bin/mjpage") {|i,o,t|
+          i.print doc.output
+          i.close
+          o.each {|line|
+            mathified += line
+          }
+          exit_status = t.value
+        }
+        return mathified unless exit_status != 0
+        Jekyll.logger.abort_with "mathjax_csp:", "Failed to execute 'node_modules/mathjax-node-page/mjpage'"
+      end
+
+      def mathify(doc, config)
+        @@config ||= config
+
         return unless MATH_TAG_REGEX.match?(doc.output)
-        parsed_doc = Nokogiri::HTML::Document.parse(doc.output)
-        inline_styles = {}
-        math_tags = parsed_doc.css("script[type='math/tex'], script[type='math/tex; mode=display']")
-        for math_tag in math_tags do
-          Jekyll.logger.warn "math: " + math_tag.content
-          escaped_tag_content = math_tag.content.gsub(/'/, "\x27")
-          inline = math_tag['type'].include?("mode=display") ? "" : "--inline"
-          svg_outer_html = `node_modules/mathjax-node-cli/bin/tex2svg #{inline} '#{escaped_tag_content}'`
-          svg_tag = math_tag.add_next_sibling(svg_outer_html)[0]
-          addInlineStyle(svg_tag, inline_styles)
+        Jekyll.logger.info "Rendering math:", doc.relative_path
+
+        mjpage_output = run_mjpage(doc)
+        parsed_doc = Nokogiri::HTML::Document.parse(mjpage_output)
+        last_child = parsed_doc.at_css("head").last_element_child()
+        if last_child.name == "style"
+          if @@config["strip_css"]
+            Jekyll.logger.warn "mathjax_csp:",  "Removed static inline CSS; remember to link external stylesheet"
+            last_child.remove
+          else
+            hashStyleTag(last_child)
+          end
+        else
+          Jekyll.logger.abort_with "mathjax_csp:", "No mathjax-node-page inline CSS found"
         end
+
+        inline_styles = extractInlineStyles(parsed_doc)
         compileStyleElement(parsed_doc, inline_styles)
         doc.output = parsed_doc.to_html
       end
@@ -61,6 +92,13 @@ module Jekyll
 end
 
 Jekyll::Hooks.register [:documents], :post_render do |doc|
-  Jekyll.logger.warn "Hook called"
-  Jekyll::Mathifier.mathify(doc) if Jekyll::Mathifier.mathable?(doc)
+  config = doc.site.config["mathjax_csp"] || {}
+  config["csp_hashes"] ||= []
+  config["csp_hashes"] = Set.new(config["csp_hashes"])
+  Jekyll::Mathifier.mathify(doc, config) if Jekyll::Mathifier.mathable?(doc)
+end
+
+Jekyll::Hooks.register [:site], :post_render do |site|
+  config = site.config["mathjax_csp"]
+  Jekyll.logger.warn "Final config: #{config}"
 end
