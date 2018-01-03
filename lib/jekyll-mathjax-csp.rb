@@ -28,8 +28,8 @@ module Jekyll
       end
 
       def hashStyleTag(style_tag)
-        csp_digest = "sha256-#{Digest::SHA256.base64digest(style_tag.content)}"
-        style_tag.add_previous_sibling("<!-- '#{csp_digest}' -->")
+        csp_digest = "'sha256-#{Digest::SHA256.base64digest(style_tag.content)}'"
+        style_tag.add_previous_sibling("<!-- #{csp_digest} -->")
         @@config["csp_hashes"].add(csp_digest)
       end
 
@@ -68,7 +68,7 @@ module Jekyll
         last_child = parsed_doc.at_css("head").last_element_child()
         if last_child.name == "style"
           if @@config["strip_css"]
-            Jekyll.logger.warn "mathjax_csp:",  "Removed static inline CSS; remember to link external stylesheet"
+            Jekyll.logger.warn "mathjax_csp:",  "Removed static inline CSS; remember to link to external stylesheet"
             last_child.remove
           else
             hashStyleTag(last_child)
@@ -86,19 +86,50 @@ module Jekyll
         (doc.is_a?(Jekyll::Page) || doc.write?) &&
           doc.output_ext == ".html" || (doc.permalink && doc.permalink.end_with?("/"))
       end
+    end
+  end
 
+  class MathJaxSourcesTag < Liquid::Tag
+
+    def initialize(tag_name, text, tokens)
+      super
+    end
+
+    def render(context)
+      config = context.registers[:site].config["mathjax_csp"]
+      source_list = config["final_source_list"]
+      if source_list.nil?
+        config["second_pass_docs"].add(context.registers[:page]["path"])
+        return ""
+      else
+        return source_list
+      end
     end
   end
 end
 
-Jekyll::Hooks.register [:documents], :post_render do |doc|
-  config = doc.site.config["mathjax_csp"] || {}
+Liquid::Template.register_tag('mathjax_sources', Jekyll::MathJaxSourcesTag)
+
+Jekyll::Hooks.register [:site], :after_init do |site|
+  config = site.config["mathjax_csp"] || {}
   config["csp_hashes"] ||= []
   config["csp_hashes"] = Set.new(config["csp_hashes"])
-  Jekyll::Mathifier.mathify(doc, config) if Jekyll::Mathifier.mathable?(doc)
+  config["second_pass_docs"] ||= []
+  config["second_pass_docs"] = Set.new(config["second_pass_docs"])
+  site.config["mathjax_csp"] = config
 end
 
-Jekyll::Hooks.register [:site], :post_render do |site|
+Jekyll::Hooks.register [:documents], :post_render do |doc|
+  Jekyll::Mathifier.mathify(doc, doc.site.config["mathjax_csp"]) if Jekyll::Mathifier.mathable?(doc)
+end
+
+Jekyll::Hooks.register [:site], :post_render do |site, payload|
   config = site.config["mathjax_csp"]
-  Jekyll.logger.warn "Final config: #{config}"
+  config["final_source_list"] = config["csp_hashes"].to_a().join(" ")
+  if config["second_pass_docs"].empty?()
+    Jekyll.logger.warn "mathjax_csp:", "Add the following to the style-src part of your CSP:"
+    Jekyll.logger.warn "mathjax_csp:", config["final_source_list"]
+  else
+    Jekyll.logger.warn "Re-render:", config["second_pass_docs"].to_a().join("; ")
+  end
 end
