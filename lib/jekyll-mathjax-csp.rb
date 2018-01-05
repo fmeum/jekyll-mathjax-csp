@@ -70,7 +70,7 @@ module Jekyll
         last_child = parsed_doc.at_css("head").last_element_child()
         if last_child.name == "style"
           if @@config["strip_css"]
-            Jekyll.logger.warn "Removed static CSS:",  "Remember to <link> in external stylesheet"
+            Jekyll.logger.warn "Removed static CSS:", "Remember to <link> in external stylesheet"
             last_child.remove
           else
             hashStyleTag(last_child)
@@ -138,7 +138,7 @@ Jekyll::Hooks.register [:site], :post_write do |site, payload|
   config["final_source_list"] = config["csp_hashes"].to_a().join(" ")
   if config["second_pass_docs"].empty?()
     Jekyll.logger.warn "mathjax_csp:", "Add the following to the style-src part of your CSP:"
-    Jekyll.logger.warn "mathjax_csp:", config["final_source_list"]
+    Jekyll.logger.warn "", config["final_source_list"]
   else
     for relative_path in config["second_pass_docs"]
       Jekyll.logger.info "Adding CSP sources:", relative_path
