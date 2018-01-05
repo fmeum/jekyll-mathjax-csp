@@ -64,10 +64,15 @@ module Jekyll
 
         return unless MATH_TAG_REGEX.match?(doc.output)
         Jekyll.logger.info "Rendering math:", doc.relative_path
+        parsed_doc = Nokogiri::HTML::Document.parse(doc.output)
+        if !parsed_doc.css("svg[style]").empty?()
+          Jekyll.logger.abort_with "mathjax_csp:", "Inline style on <svg> element present before running 'mjpage'"
+          Jekyll.logger.abort_with "", "This signals a misconfiguration or a server-side style injection."
+        end
 
         mjpage_output = run_mjpage(doc)
-        parsed_doc = Nokogiri::HTML::Document.parse(mjpage_output)
-        last_child = parsed_doc.at_css("head").last_element_child()
+        parsed_output = Nokogiri::HTML::Document.parse(mjpage_output)
+        last_child = parsed_output.at_css("head").last_element_child()
         if last_child.name == "style"
           if @@config["strip_css"]
             Jekyll.logger.warn "Removed static CSS:", "Remember to <link> in external stylesheet"
