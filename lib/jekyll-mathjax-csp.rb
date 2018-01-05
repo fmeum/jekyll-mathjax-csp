@@ -51,7 +51,7 @@ module Jekyll
           i.print doc.output
           i.close
           o.each {|line|
-            mathified += line
+            mathified.concat(line)
           }
           exit_status = t.value
         }
