@@ -75,7 +75,7 @@ module Jekyll
         last_child = parsed_output.at_css("head").last_element_child()
         if last_child.name == "style"
           if @@config["strip_css"]
-            Jekyll.logger.warn "Removed static CSS:", "Remember to <link> in external stylesheet"
+            Jekyll.logger.info "Removed static CSS:", "Remember to <link> in external stylesheet"
             last_child.remove
           else
             hashStyleTag(last_child)
