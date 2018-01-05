@@ -1,3 +1,5 @@
+# Server-side, CSP-aware math rendering for Jekyll using mathjax-node-page
+#
 # The MIT License (MIT)
 # =====================
 #
