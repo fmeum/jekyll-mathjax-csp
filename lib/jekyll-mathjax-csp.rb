@@ -71,8 +71,8 @@ module Jekyll
         end
 
         mjpage_output = run_mjpage(doc)
-        parsed_output = Nokogiri::HTML::Document.parse(mjpage_output)
-        last_child = parsed_output.at_css("head").last_element_child()
+        parsed_doc = Nokogiri::HTML::Document.parse(mjpage_output)
+        last_child = parsed_doc.at_css("head").last_element_child()
         if last_child.name == "style"
           if @@config["strip_css"]
             Jekyll.logger.info "Removed static CSS:", "Remember to <link> in external stylesheet"
