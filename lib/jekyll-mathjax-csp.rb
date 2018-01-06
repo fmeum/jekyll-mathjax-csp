@@ -163,14 +163,12 @@ Liquid::Template.register_tag('mathjax_sources', Jekyll::MathJaxSourcesTag)
 Jekyll::Hooks.register [:site], :pre_render do |site|
   config = site.config["mathjax_csp"] || {}
   # A set of CSP hash sources to be added as style sources; populated automatically
-  config["csp_hashes"] ||= []
-  config["csp_hashes"] = Set.new(config["csp_hashes"])
+  config["csp_hashes"] = Set.new([])
   # This is the first pass (mathify & collect hashes), the second pass (insert hashes into CSP
   # rules) is triggered manually
   config["second_pass"] = false
   # A set of Jekyll documents to which the hash sources should be added; populated automatically
-  config["second_pass_docs"] ||= []
-  config["second_pass_docs"] = Set.new(config["second_pass_docs"])
+  config["second_pass_docs"] = Set.new([])
   site.config["mathjax_csp"] = config
 end
 
