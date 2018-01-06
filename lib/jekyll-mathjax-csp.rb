@@ -160,7 +160,7 @@ end
 Liquid::Template.register_tag('mathjax_sources', Jekyll::MathJaxSourcesTag)
 
 # Set up plugin config
-Jekyll::Hooks.register [:site], :after_init do |site|
+Jekyll::Hooks.register [:site], :pre_render do |site|
   config = site.config["mathjax_csp"] || {}
   # A set of CSP hash sources to be added as style sources; populated automatically
   config["csp_hashes"] ||= []
