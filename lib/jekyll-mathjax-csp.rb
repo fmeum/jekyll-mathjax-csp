@@ -115,7 +115,7 @@ module Jekyll
           # Set strip_css to true in _config.yml if you load the styles mjpage adds to the head
           # from an external *.css file
           if @@config["strip_css"]
-            Jekyll.logger.info "Removed static CSS:", "Remember to <link> in external stylesheet"
+            Jekyll.logger.info "", "Remember to <link> in external stylesheet!"
             last_child.remove
           else
             hashStyleTag(last_child)
