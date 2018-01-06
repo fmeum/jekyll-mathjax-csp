@@ -146,21 +146,12 @@ module Jekyll
 
     def render(context)
       config = context.registers[:site].config["mathjax_csp"]
-      config["second_pass_docs"].add(context.registers[:page]["path"])
-      return config["mathjax_sources_marker"]
-    end
-  end
-
-  # Replace the placeholders left behind by {% mathjax_sources %} Liquid tags with the actual
-  # source list during a second pass
-  class SourceMarkerReplacer
-
-    class << self
-
-      def replace(file_name, config)
-        contents = File.read(file_name)
-        new_contents = contents.gsub(config["mathjax_sources_marker"], config["final_source_list"])
-        File.open(file_name, "w") {|file| file.puts new_contents }
+      if config["second_pass"]
+        return config["final_source_list"]
+      else
+        config["second_pass_docs"].add(context.registers[:page]["path"])
+        # Leave Liquid tag in place for second pass
+        return "{% mathjax_sources %}"
       end
     end
   end
@@ -174,12 +165,12 @@ Jekyll::Hooks.register [:site], :after_init do |site|
   # A set of CSP hash sources to be added as style sources; populated automatically
   config["csp_hashes"] ||= []
   config["csp_hashes"] = Set.new(config["csp_hashes"])
+  # This is the first pass (mathify & collect hashes), the second pass (insert hashes into CSP
+  # rules) is triggered manually
+  config["second_pass"] = false
   # A set of Jekyll documents to which the hash sources should be added; populated automatically
   config["second_pass_docs"] ||= []
   config["second_pass_docs"] = Set.new(config["second_pass_docs"])
-  # A unique random marker that serves as a placeholder for the hash source list; populated
-  # automatically
-  config["mathjax_sources_marker"] = "'mathjax-sources-marker-#{SecureRandom.hex()}'"
   site.config["mathjax_csp"] = config
 end
 
@@ -194,16 +185,22 @@ end
 # Run over all documents with {% mathjax_sources %} Liquid tags again and insert the list of CSP
 # hash sources coming from MathJax styles
 Jekyll::Hooks.register [:site], :post_write do |site, payload|
+  site.config["mathjax_csp"]["second_pass"] = true
   config = site.config["mathjax_csp"]
   config["final_source_list"] = config["csp_hashes"].to_a().join(" ")
   if config["second_pass_docs"].empty?()
     Jekyll.logger.warn "mathjax_csp:", "Add the following to the style-src part of your CSP:"
     Jekyll.logger.warn "", config["final_source_list"]
   else
-    for relative_path in config["second_pass_docs"]
-      Jekyll.logger.info "Adding CSP sources:", relative_path
-      absolute_path = File.join(site.config["destination"], relative_path)
-      Jekyll::SourceMarkerReplacer.replace(absolute_path, config)
+    Jekyll.logger.info "Adding CSP sources:", config["second_pass_docs"].to_a().join(" ")
+    site.pages.flatten.each do |page|
+      if config["second_pass_docs"].include?(page.path)
+        # Rerender the page
+        page.output = Jekyll::Renderer.new(site, page, payload).run()
+        page.trigger_hooks(:post_render)
+        page.write(site.dest)
+        page.trigger_hooks(:post_write)
+      end
     end
   end
 end
