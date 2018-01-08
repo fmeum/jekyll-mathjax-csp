@@ -153,8 +153,7 @@ module Jekyll
         return self.class.final_source_list
       else
         self.class.second_pass_docs.add(page["path"])
-        # Leave Liquid tag in place for second pass
-        return "{% mathjax_sources %}"
+        return ""
       end
     end
   end
@@ -199,14 +198,20 @@ Jekyll::Hooks.register :site, :post_write do |site, payload|
   else
     second_pass_docs_str = Jekyll::MathJaxSourcesTag.second_pass_docs.to_a().join(" ")
     Jekyll.logger.info "Adding CSP sources:", second_pass_docs_str
-    site.pages.flatten.each do |page|
-      if Jekyll::MathJaxSourcesTag.second_pass_docs.include?(relative_path)
-        # Rerender the page
-        page.output = Jekyll::Renderer.new(site, page, payload).run()
-        page.trigger_hooks(:post_render)
-        page.write(site.dest)
-        page.trigger_hooks(:post_write)
+    rerender = proc { |docs, uses_absolute_path|
+      docs.each do |doc|
+        relative_path = uses_absolute_path ? doc.relative_path : doc.path
+        if Jekyll::MathJaxSourcesTag.second_pass_docs.include?(relative_path)
+          # Rerender the page
+          doc.content = Jekyll::MathJaxSourcesTag.unrendered_docs[relative_path]
+          doc.output = Jekyll::Renderer.new(site, doc, payload).run()
+          doc.trigger_hooks(:post_render)
+          doc.write(site.dest)
+          doc.trigger_hooks(:post_write)
+        end
       end
-    end
+    }
+    rerender.call(site.pages, false)
+    rerender.call(site.docs_to_write, true)
   end
 end
