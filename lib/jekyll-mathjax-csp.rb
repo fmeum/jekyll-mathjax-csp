@@ -171,11 +171,18 @@ Jekyll::Hooks.register :site, :pre_render do |site|
   Jekyll::MathJaxSourcesTag.second_pass = false
   # A set of Jekyll documents to which the hash sources should be added; populated automatically
   Jekyll::MathJaxSourcesTag.second_pass_docs = Set.new([])
+  # The original file content of documents
+  Jekyll::MathJaxSourcesTag.unrendered_docs = {}
+end
+
+# Keep original (Markdown) content of documents around for the second rendering pass
+Jekyll::Hooks.register [:documents, :pages], :pre_render do |doc|
+  Jekyll::MathJaxSourcesTag.unrendered_docs[doc.relative_path] = doc.content
 end
 
 # Replace math blocks with SVG renderings using mathjax-node-page and collect inline styles in a
 # single <style> element
-Jekyll::Hooks.register [:documents], :post_render do |doc|
+Jekyll::Hooks.register [:documents, :pages], :post_render do |doc|
   if Jekyll::Mathifier.mathable?(doc)
     Jekyll::Mathifier.mathify(doc, doc.site.config["mathjax_csp"])
   end
