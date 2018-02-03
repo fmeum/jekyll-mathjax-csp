@@ -188,7 +188,7 @@ end
 
 # Run over all documents with {% mathjax_sources %} Liquid tags again and insert the list of CSP
 # hash sources coming from MathJax styles
-Jekyll::Hooks.register :site, :post_write do |site, payload|
+Jekyll::Hooks.register :site, :post_render do |site, payload|
   Jekyll::MathJaxSourcesTag.second_pass = true
   Jekyll::MathJaxSourcesTag.final_source_list = Jekyll::Mathifier.csp_hashes.to_a().join(" ")
   if Jekyll::MathJaxSourcesTag.second_pass_docs.empty?()
@@ -205,8 +205,6 @@ Jekyll::Hooks.register :site, :post_write do |site, payload|
           doc.content = Jekyll::MathJaxSourcesTag.unrendered_docs[relative_path]
           doc.output = Jekyll::Renderer.new(site, doc, payload).run()
           doc.trigger_hooks(:post_render)
-          doc.write(site.dest)
-          doc.trigger_hooks(:post_write)
         end
       end
     }
