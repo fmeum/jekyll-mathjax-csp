@@ -102,8 +102,8 @@ module Jekyll
         parsed_doc = Nokogiri::HTML::Document.parse(doc.output)
         # Ensure that all styles we pick up weren't present before mjpage ran
         unless parsed_doc.css("svg[style]").empty?()
-          Jekyll.logger.abort_with "mathjax_csp:", "Inline style on <svg> element present before running 'mjpage'"
-          Jekyll.logger.abort_with "", "This signals a misconfiguration or a server-side style injection."
+          Jekyll.logger.warn "mathjax_csp:", "Inline style on <svg> element present before running 'mjpage'"
+          Jekyll.logger.warn "", "This signals a misconfiguration or a server-side style injection."
         end
 
         mjpage_output = run_mjpage(doc.output)
@@ -118,8 +118,6 @@ module Jekyll
           else
             hashStyleTag(last_child)
           end
-        else
-          Jekyll.logger.abort_with "mathjax_csp:", "No mathjax-node-page inline CSS found"
         end
 
         style_attributes = extractStyleAttributes(parsed_doc)
@@ -192,8 +190,8 @@ Jekyll::Hooks.register :site, :post_render do |site, payload|
   Jekyll::MathJaxSourcesTag.second_pass = true
   Jekyll::MathJaxSourcesTag.final_source_list = Jekyll::Mathifier.csp_hashes.to_a().join(" ")
   if Jekyll::MathJaxSourcesTag.second_pass_docs.empty?()
-    Jekyll.logger.warn "mathjax_csp:", "Add the following to the style-src part of your CSP:"
-    Jekyll.logger.warn "", Jekyll::MathJaxSourcesTag.final_source_list
+    Jekyll.logger.info "mathjax_csp:", "Add the following to the style-src part of your CSP:"
+    Jekyll.logger.info "", Jekyll::MathJaxSourcesTag.final_source_list
   else
     second_pass_docs_str = Jekyll::MathJaxSourcesTag.second_pass_docs.to_a().join(" ")
     Jekyll.logger.info "Adding CSP sources:", second_pass_docs_str
