@@ -102,8 +102,8 @@ module Jekyll
         parsed_doc = Nokogiri::HTML::Document.parse(doc.output)
         # Ensure that all styles we pick up weren't present before mjpage ran
         unless parsed_doc.css("svg[style]").empty?()
-          Jekyll.logger.warn "mathjax_csp:", "Inline style on <svg> element present before running 'mjpage'"
-          Jekyll.logger.warn "", "This signals a misconfiguration or a server-side style injection."
+          Jekyll.logger.error "mathjax_csp:", "Inline style on <svg> element present before running 'mjpage'"
+          Jekyll.logger.abort_with "", "This signals a misconfiguration or a server-side style injection."
         end
 
         mjpage_output = run_mjpage(doc.output)
