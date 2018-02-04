@@ -155,7 +155,8 @@ module Jekyll
         return self.class.final_source_list
       else
         self.class.second_pass_docs.add(page["path"])
-        return ""
+        # Placeholder (hash corresponds to the empty script element)
+        return "'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='"
       end
     end
   end
