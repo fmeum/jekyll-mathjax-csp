@@ -4,6 +4,7 @@ Gem::Specification.new do |s|
   s.summary = "Server-side MathJax + CSP for Jekyll"
   s.version = "0.1.0"
   s.author = "Fabian Henneke"
+  s.email = "fabian@henneke.me"
   s.homepage = "https://github.com/FabianHenneke/jekyll-mathjax-csp"
 
   s.license = "MIT"
