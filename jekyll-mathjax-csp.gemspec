@@ -1,7 +1,8 @@
 Gem::Specification.new do |s|
   s.name = "jekyll-mathjax-csp"
-  s.summary = "Server-side MathJax rendering for Jekyll with a strict CSP"
-  s.version = "0.0.1"
+  s.description = "Server-side MathJax rendering for Jekyll with a strict CSP"
+  s.summary = "Server-side MathJax + CSP for Jekyll"
+  s.version = "0.1.0"
   s.author = "Fabian Henneke"
   s.homepage = "https://github.com/FabianHenneke/jekyll-mathjax-csp"
 
