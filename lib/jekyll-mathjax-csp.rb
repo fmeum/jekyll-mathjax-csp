@@ -51,7 +51,7 @@ module Jekyll
         svg_tags = parsed_doc.css("svg[style]")
         for svg_tag in svg_tags do
           style_attribute = svg_tag["style"]
-          digest = Digest::MD5.hexdigest(style_attribute)
+          digest = Digest::MD5.hexdigest(style_attribute)[0..15]
           style_attributes[digest] = style_attribute
 
           digest_class = "mathjax-inline-#{digest}"
