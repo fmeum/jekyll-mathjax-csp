@@ -82,16 +82,21 @@ module Jekyll
       def run_mjpage(output)
         mathified = ""
         exit_status = 0
-        Open3.popen2("node_modules/mathjax-node-page/bin/mjpage") {|i,o,t|
-          i.print output
-          i.close
-          o.each {|line|
-            mathified.concat(line)
+        begin
+          Open3.popen2("node_modules/mathjax-node-page/bin/mjpage") {|i,o,t|
+            i.print output
+            i.close
+            o.each {|line|
+              mathified.concat(line)
+            }
+            exit_status = t.value
           }
-          exit_status = t.value
-        }
-        return mathified unless exit_status != 0
-        Jekyll.logger.abort_with "mathjax_csp:", "Failed to execute 'node_modules/mathjax-node-page/mjpage'"
+          return mathified unless exit_status != 0
+          Jekyll.logger.abort_with "mathjax_csp:", "'node_modules/mathjax-node-page/mjpage' not found"
+        rescue
+          Jekyll.logger.abort_with "mathjax_csp:", "Failed to execute 'node_modules/mathjax-node-page/mjpage'"
+        end
+
       end
 
       # Render math
