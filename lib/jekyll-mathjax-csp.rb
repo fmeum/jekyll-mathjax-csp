@@ -132,8 +132,8 @@ module Jekyll
     end
   end
 
-  # Register the page with the {% mathjax_sources %} Liquid tag for the second pass and temporarily
-  # emit a placeholder, later to be replaced by the list of MathJax-related CSP hashes
+  # Register the page with the {% mathjax_csp_sources %} Liquid tag for the second pass and
+  # temporarily emit a placeholder, later to be replaced by the list of MathJax-related CSP hashes
   class MathJaxSourcesTag < Liquid::Tag
 
     class << self
@@ -156,7 +156,7 @@ module Jekyll
   end
 end
 
-Liquid::Template.register_tag('mathjax_sources', Jekyll::MathJaxSourcesTag)
+Liquid::Template.register_tag("mathjax_csp_sources", Jekyll::MathJaxSourcesTag)
 
 # Set up plugin config
 Jekyll::Hooks.register :site, :pre_render do |site|
