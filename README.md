@@ -33,7 +33,7 @@ The plugin runs the output of Jekyll's markdown parser [kramdown](http://kramdow
      - package-lock.json
    ```
 
-4. Add the `{% mathjax_sources %}` Liquid tag where you want the CSP `'sha256-...'` hashes for `<style>` elements to be emitted. Don't forget to add the YAML front matter (two lines of `---`) to such files. If you specify your CSP in a different way, add the `style-src` sources the plugins prints to the console during build.
+4. Add the `{% mathjax_csp_sources %}` Liquid tag where you want the CSP `'sha256-...'` hashes for `<style>` elements to be emitted. Don't forget to add the YAML front matter (two lines of `---`) to such files. If you specify your CSP in a different way, add the `style-src` sources the plugins prints to the console during build.
 
 5. Include beautiful math in your posts!
 
