@@ -31,7 +31,6 @@ require "jekyll"
 
 require "digest"
 require "open3"
-require "securerandom"
 require "set"
 
 module Jekyll
