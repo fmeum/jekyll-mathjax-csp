@@ -185,7 +185,7 @@ end
 # single <style> element
 Jekyll::Hooks.register [:documents, :pages], :post_render do |doc|
   if Jekyll::Mathifier.mathable?(doc)
-    Jekyll::Mathifier.mathify(doc, doc.site.config["mathjax_csp"])
+    Jekyll::Mathifier.mathify(doc, doc.site.config["mathjax_csp"] || {})
   end
 end
 
