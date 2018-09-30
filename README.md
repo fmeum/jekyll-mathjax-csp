@@ -45,12 +45,47 @@ The plugin runs the output of Jekyll's markdown parser [kramdown](http://kramdow
 
 ## Configuration
 
+The following fields can be set in `_config.yml`; their default values are given in the sample below.
+
+```yaml
+mathjax_csp:
+  linebreaks: false
+  single_dollars: false
+  format: AsciiMath,TeX,MathML
+  font: TeX
+  semantics: false
+  notexthints: false
+  output: SVG
+  eqno: none
+  ex_size: 6
+  width: 100
+  extensions: ""
+  font_url: "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/fonts/HTML-CSS"
+  strip_css: false
+```
 'mathjax-node-page' adds a fixed inline stylesheet to every page containing math. If you want to serve this stylesheet as an external `.css`, you can advise the plugin to strip it from the output by adding the following lines to your `_config.yml`:
 
 ```yaml
 mathjax_csp:
   strip_css: true
 ```
+
+Configuration for 'mathjax-node-page' is also available:
+
+| Key              | Description                                                  | Default                                                      |
+| ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `linebreaks`     | Perform automatic line-breaking                              | `false`                                                      |
+| `single_dollars` | Allow single-dollar delimiters for inline math               | `false`                                                      |
+| `format`         | Input format(s) to look for                                  | `AsciiMath,TeX,MathML`                                       |
+| `font`           | Web font to use in SVG output                                | `TeX`                                                        |
+| `semantics`      | For TeX or Asciimath source and MathML output, add input in `<semantics>` tag | `false`                                                      |
+| `notexthints`    | For TeX input and MathML output, don't add TeX-specific classes | `false`                                                      |
+| `output`         | Output format: SVG, CommonHTML, or MML                       | `SVG`                                                        |
+| `eqno`           | Equation number style (none, AMS, or all)                    | `none`                                                       |
+| `ex_size`        | Ex-size, in pixels                                           | `6`                                                          |
+| `width`          | Width of equation container in `ex`. Used for line-breaking  | `100`                                                        |
+| `extensions`     | Extra MathJax extensions (e.g. `Safe,Tex/noUndefined`)       | `""`                                                         |
+| `font_url`       | URL to use for web fonts                                     | `https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/fonts/HTML-CSS` |
 
 ## Local testing
 

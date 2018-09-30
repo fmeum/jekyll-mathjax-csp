@@ -40,6 +40,25 @@ module Jekyll
   class Mathifier
     MATH_TAG_REGEX = /<script[^>]*type="math\/tex/i
 
+    FIELDS = {
+      "format" => "--format",
+      "font" => "--font",
+      "ouput" => "--output",
+      "equation_number" => "--eqno",
+      "output" => "--output",
+      "eqno" => "--eqno",
+      "ex_size" => "--ex",
+      "width" => "--width",
+      "extensions" => "--extensions",
+      "font_url" => "--fontURL"
+    }
+    FLAGS = {
+      "linebreaks" => "--linebreaks",
+      "single_dollars" => "--dollars",
+      "semantics" => "--semantics",
+      "notexthints" => "--notexthints"
+    }
+
     class << self
       attr_accessor :csp_hashes
 
@@ -78,11 +97,26 @@ module Jekyll
       end
 
       # Run mathjax-node-page on a String containing an HTML doc
-      def run_mjpage(output)
+      def run_mjpage(config, output)
         mathified = ""
         exit_status = 0
+        
+        command = "node_modules/mathjax-node-page/bin/mjpage"
+        
+        FIELDS.each do |name, flag|
+          unless config[name].nil?
+            command << " " << flag << " " << config[name].to_s
+          end
+        end
+
+        FLAGS.each do |name, flag|
+          unless config[name].nil?
+            command << " " << flag
+          end
+        end
+
         begin
-          Open3.popen2("node_modules/mathjax-node-page/bin/mjpage") {|i,o,t|
+          Open3.popen2(command) {|i,o,t|
             i.print output
             i.close
             o.each {|line|
@@ -110,7 +144,7 @@ module Jekyll
           Jekyll.logger.abort_with "", "due to a misconfiguration or server-side style injection."
         end
 
-        mjpage_output = run_mjpage(doc.output)
+        mjpage_output = run_mjpage(config, doc.output)
         parsed_doc = Nokogiri::HTML::Document.parse(mjpage_output)
         last_child = parsed_doc.at_css("head").last_element_child()
         if last_child.name == "style"
