@@ -71,7 +71,7 @@ Another possibility is using a [`meta` tag with `http-equiv`](https://developer.
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ...">
 ```
 
-Note that this cannot be used frame-ancestors, report-uri, or sandbox.
+Note that this cannot be used with frame-ancestors, report-uri, or sandbox.
 
 ## License
 
