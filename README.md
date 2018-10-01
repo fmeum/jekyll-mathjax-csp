@@ -63,7 +63,15 @@ webrick:
       default-src 'none'; script-src ...
 ```
 
-It is unfortunately not possible to have Liquid tags in `_config.yml`, so you will have to update your CSP manually. Don't forget to restart `jekyll` for it to pick up the config changes.
+It is unfortunately not possible to have Liquid tags in `_config.yml`, so with this approach, you will have to update your CSP manually. Don't forget to restart `jekyll` for it to pick up the config changes.
+
+Another possibility is using a [`meta` tag with `http-equiv`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#attr-http-equiv), placed in your pages' `<head>` element:
+
+```html
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ...">
+```
+
+Note that this cannot be used with frame-ancestors, report-uri, or sandbox.
 
 ## License
 
