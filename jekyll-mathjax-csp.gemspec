@@ -11,6 +11,6 @@ Gem::Specification.new do |s|
   s.files = ["lib/jekyll-mathjax-csp.rb"]
   s.extra_rdoc_files = ["README.md"]
 
-  s.add_dependency "html-pipeline", "~> 2.3"
-  s.add_dependency "jekyll", "~> 3.0"
+  s.add_dependency "html-pipeline", "~> 2.12"
+  s.add_dependency "jekyll", ">= 3.0", "< 5.0"
 end
