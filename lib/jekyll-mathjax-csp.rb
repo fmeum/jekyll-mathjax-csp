@@ -38,7 +38,7 @@ module Jekyll
   # Run Jekyll documents through mathjax-node-page, transform style attributes into inline style
   # tags and compute their hashes
   class Mathifier
-    MATH_TAG_REGEX = /<script[^>]*type="math\/tex/i
+    MATH_TAG_REGEX = /(<script[^>]*type="math\/tex|\\\[.*\\\]|\\\(.*\\\))/i
 
     FIELDS = {
       "format" => "--format",
