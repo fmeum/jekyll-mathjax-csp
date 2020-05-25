@@ -12,7 +12,7 @@ The plugin runs the output of Jekyll's markdown parser [kramdown](http://kramdow
 
    ```bash
    npm init -f # only if you don't have a package.json yet
-   npm install mathjax-node-page@2.X
+   npm install mathjax-node-page@3.X
    ```
 
 2. Install `jekyll-mathjax-csp`:
