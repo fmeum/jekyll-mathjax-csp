@@ -100,9 +100,9 @@ module Jekyll
       def run_mjpage(config, output)
         mathified = ""
         exit_status = 0
-        
+
         command = "node_modules/mathjax-node-page/bin/mjpage"
-        
+
         FIELDS.each do |name, flag|
           unless config[name].nil?
             command << " " << flag << " " << config[name].to_s
