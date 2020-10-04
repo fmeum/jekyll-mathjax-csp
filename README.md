@@ -1,18 +1,18 @@
 # jekyll-mathjax-csp
 
-Render math on the server using [MathJax-node](https://github.com/mathjax/MathJax-node), while maintaining a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) without `'unsafe-inline'`.
+Render math on the server using the [MathJax 3 node API]((https://github.com/mathjax/MathJax-demos-node), while maintaining a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) without `'unsafe-inline'`.
 
 While MathJax is well equipped to render beautiful math in a browser, letting it run in the client has two distinctive disadvantages: It is quite CPU-intensive and crucially relies on inline `style` attributes and elements. This Jekyll plugin aims to resolve both issues at once by rendering formulas to SVG images on the server, extracting all generated `style` attributes into a single `<style>` element in the head of the page and computing a hash over its content that can then be added as a CSP `style-src`.
 
-The plugin runs the output of Jekyll's markdown parser [kramdown](http://kramdown.gettalong.org/) through the CLI converter `mjpage` offered by the npm package [`mathjax-node-page`](https://github.com/pkra/mathjax-node-page) and thus behaves exactly as client-side MathJax in SVG rendering mode would.
+The plugin runs the output of Jekyll's markdown parser [kramdown](http://kramdown.gettalong.org/) through the [MathJax 3 node API](https://github.com/mathjax/MathJax-demos-node) and thus behaves exactly as client-side MathJax in SVG rendering mode would.
 
 ## Usage
 
-1. Install the npm package `mathjax-node-page` from your top-level Jekyll directory:
+1. Install the npm packages `mathjax-full` and `yargs` from your top-level Jekyll directory:
 
    ```bash
    npm init -f # only if you don't have a package.json yet
-   npm install mathjax-node-page@3.X
+   npm install mathjax-full yargs
    ```
 
 2. Install `jekyll-mathjax-csp`:
@@ -39,7 +39,8 @@ The plugin runs the output of Jekyll's markdown parser [kramdown](http://kramdow
 
 ## Dependencies
 
-* `mathjax-node-page` (npm): 2.0+
+* `mathjax-full` (npm): 3.0+
+* `yargs` (npm): 16.1.0+
 * `html-pipeline`: 2.3+
 * `jekyll`: 3.0+
 
@@ -49,43 +50,24 @@ The following fields can be set in `_config.yml`; their default values are given
 
 ```yaml
 mathjax_csp:
-  linebreaks: false
-  single_dollars: false
-  format: AsciiMath,TeX,MathML
-  font: TeX
-  semantics: false
-  notexthints: false
-  output: SVG
-  eqno: none
+  em_size: 12
   ex_size: 6
-  width: 100
-  extensions: ""
-  font_url: "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/fonts/HTML-CSS"
   strip_css: false
 ```
-'mathjax-node-page' adds a fixed inline stylesheet to every page containing math. If you want to serve this stylesheet as an external `.css`, you can advise the plugin to strip it from the output by adding the following lines to your `_config.yml`:
+
+MathJax adds a fixed inline stylesheet to every page containing math. If you want to serve this stylesheet as an external `.css`, you can advise the plugin to strip it from the output by adding the following lines to your `_config.yml`:
 
 ```yaml
 mathjax_csp:
   strip_css: true
 ```
 
-Configuration for 'mathjax-node-page' is also available:
+Configuration for MathJax is also available:
 
 | Key              | Description                                                  | Default                                                      |
 | ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| `linebreaks`     | Perform automatic line-breaking                              | `false`                                                      |
-| `single_dollars` | Allow single-dollar delimiters for inline math               | `false`                                                      |
-| `format`         | Input format(s) to look for                                  | `AsciiMath,TeX,MathML`                                       |
-| `font`           | Web font to use in SVG output                                | `TeX`                                                        |
-| `semantics`      | For TeX or Asciimath source and MathML output, add input in `<semantics>` tag | `false`                                                      |
-| `notexthints`    | For TeX input and MathML output, don't add TeX-specific classes | `false`                                                      |
-| `output`         | Output format: SVG, CommonHTML, or MML                       | `SVG`                                                        |
-| `eqno`           | Equation number style (none, AMS, or all)                    | `none`                                                       |
+| `em_size`        | Em-size, in pixels                                           | `12`                                                          |
 | `ex_size`        | Ex-size, in pixels                                           | `6`                                                          |
-| `width`          | Width of equation container in `ex`. Used for line-breaking  | `100`                                                        |
-| `extensions`     | Extra MathJax extensions (e.g. `Safe,Tex/noUndefined`)       | `""`                                                         |
-| `font_url`       | URL to use for web fonts                                     | `https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/fonts/HTML-CSS` |
 
 ## Local testing
 
