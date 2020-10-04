@@ -1,4 +1,4 @@
-# Server-side, CSP-aware math rendering for Jekyll using mathjax-node-page
+# Server-side, CSP-aware math rendering for Jekyll using MathJax's node API
 #
 # The MIT License (MIT)
 # =====================
@@ -35,46 +35,32 @@ require "set"
 
 module Jekyll
 
-  # Run Jekyll documents through mathjax-node-page, transform style attributes into inline style
+  # Run Jekyll documents through MathJax's node engine, transform style attributes into inline style
   # tags and compute their hashes
   class Mathifier
     MATH_TAG_REGEX = /(<script[^>]*type="math\/tex|\\\[.*\\\]|\\\(.*\\\))/im
 
     FIELDS = {
-      "format" => "--format",
-      "font" => "--font",
-      "ouput" => "--output",
-      "equation_number" => "--eqno",
-      "output" => "--output",
-      "eqno" => "--eqno",
+      "em_size" => "--em",
       "ex_size" => "--ex",
-      "width" => "--width",
-      "extensions" => "--extensions",
-      "font_url" => "--fontURL"
-    }
-    FLAGS = {
-      "linebreaks" => "--linebreaks",
-      "single_dollars" => "--dollars",
-      "semantics" => "--semantics",
-      "notexthints" => "--notexthints"
     }
 
     class << self
       attr_accessor :csp_hashes
 
-      # Extract all style attributes from SVG elements and replace them by a new CSS class with a
-      # deterministic name
+      # Extract all style attributes from SVG and container elements and replace them with a new
+      # CSS class with a deterministic name
       def extractStyleAttributes(parsed_doc)
         style_attributes = {}
-        svg_tags = parsed_doc.css("svg[style]")
-        for svg_tag in svg_tags do
-          style_attribute = svg_tag["style"]
+        styled_tags = parsed_doc.css("svg[style],mjx-container[style]")
+        for styled_tag in styled_tags do
+          style_attribute = styled_tag["style"]
           digest = Digest::MD5.hexdigest(style_attribute)[0..15]
           style_attributes[digest] = style_attribute
 
           digest_class = "mathjax-inline-#{digest}"
-          svg_tag["class"] = "#{svg_tag["class"] || ""} #{digest_class}"
-          svg_tag.remove_attribute("style")
+          styled_tag["class"] = "#{styled_tag["class"] || ""} #{digest_class}"
+          styled_tag.remove_attribute("style")
         end
         return style_attributes
       end
@@ -96,12 +82,11 @@ module Jekyll
         hashStyleTag(style_tag)
       end
 
-      # Run mathjax-node-page on a String containing an HTML doc
-      def run_mjpage(config, output)
+      # Run the MathJax node backend on a String containing an HTML doc
+      def run_mathjaxify(config, output)
         mathified = ""
         exit_status = 0
-
-        command = "node_modules/mathjax-node-page/bin/mjpage"
+        command = "node #{Gem.bin_path("jekyll-mathjax-csp", "mathjaxify")}"
 
         FIELDS.each do |name, flag|
           unless config[name].nil?
@@ -109,14 +94,9 @@ module Jekyll
           end
         end
 
-        FLAGS.each do |name, flag|
-          unless config[name].nil?
-            command << " " << flag
-          end
-        end
-
+        node_path = Dir.pwd + "/node_modules"
         begin
-          Open3.popen2(command) {|i,o,t|
+          Open3.popen2({"NODE_PATH" => node_path}, command) {|i,o,t|
             i.print output
             i.close
             o.each {|line|
@@ -125,9 +105,9 @@ module Jekyll
             exit_status = t.value
           }
           return mathified unless exit_status != 0
-          Jekyll.logger.abort_with "mathjax_csp:", "'node_modules/mathjax-node-page/mjpage' not found"
+          Jekyll.logger.abort_with "mathjax_csp:", "'bin/mathjaxify' not found"
         rescue
-          Jekyll.logger.abort_with "mathjax_csp:", "Failed to execute 'node_modules/mathjax-node-page/mjpage'"
+          Jekyll.logger.abort_with "mathjax_csp:", "Failed to execute 'bin/mathjaxify'"
         end
 
       end
@@ -138,17 +118,18 @@ module Jekyll
 
         Jekyll.logger.info "Rendering math:", doc.relative_path
         parsed_doc = Nokogiri::HTML::Document.parse(doc.output)
-        # Ensure that all styles we pick up weren't present before mjpage ran
-        unless parsed_doc.css("svg[style]").empty?()
-          Jekyll.logger.error "mathjax_csp:", "Inline style on <svg> element present before running mjpage"
-          Jekyll.logger.abort_with "", "due to a misconfiguration or server-side style injection."
+        # Ensure that all styles we pick up weren't present before MathJax ran
+        unless parsed_doc.css("svg[style],mjx-container[style]").empty?()
+          Jekyll.logger.error "mathjax_csp:", "Inline style on <svg> or <mjx-container> element present"
+          Jekyll.logger.error "", "before rendering math due to misconfiguration or server-side"
+          Jekyll.logger.abort_with "", "style injection."
         end
 
-        mjpage_output = run_mjpage(config, doc.output)
-        parsed_doc = Nokogiri::HTML::Document.parse(mjpage_output)
+        mathjaxify_output = run_mathjaxify(config, doc.output)
+        parsed_doc = Nokogiri::HTML::Document.parse(mathjaxify_output)
         last_child = parsed_doc.at_css("head").last_element_child()
         if last_child.name == "style"
-          # Set strip_css to true in _config.yml if you load the styles mjpage adds to the head
+          # Set strip_css to true in _config.yml if you load the styles MathJax adds to the head
           # from an external *.css file
           if config["strip_css"]
             Jekyll.logger.info "", "Remember to <link> in external stylesheet!"
@@ -215,7 +196,7 @@ Jekyll::Hooks.register [:documents, :pages], :pre_render do |doc|
   Jekyll::MathJaxSourcesTag.unrendered_docs[doc.relative_path] = doc.content
 end
 
-# Replace math blocks with SVG renderings using mathjax-node-page and collect inline styles in a
+# Replace math blocks with SVG renderings using mathjaxify and collect inline styles in a
 # single <style> element
 Jekyll::Hooks.register [:documents, :pages], :post_render do |doc|
   if Jekyll::Mathifier.mathable?(doc)
