@@ -43,6 +43,8 @@ module Jekyll
     FIELDS = {
       "em_size" => "--em",
       "ex_size" => "--ex",
+      "single_dollars" => "--singleDollars",
+      "output" => "--output",
     }
 
     class << self
@@ -90,7 +92,11 @@ module Jekyll
 
         FIELDS.each do |name, flag|
           unless config[name].nil?
-            command << " " << flag << " " << config[name].to_s
+            if [true, false].include? config[name]
+              command << " " << flag
+            else
+              command << " " << flag << " " << config[name].to_s
+            end
           end
         end
 
