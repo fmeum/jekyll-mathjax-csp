@@ -46,15 +46,6 @@ The plugin runs the output of Jekyll's markdown parser [kramdown](http://kramdow
 
 ## Configuration
 
-The following fields can be set in `_config.yml`; their default values are given in the sample below.
-
-```yaml
-mathjax_csp:
-  em_size: 12
-  ex_size: 6
-  strip_css: false
-```
-
 MathJax adds a fixed inline stylesheet to every page containing math. If you want to serve this stylesheet as an external `.css`, you can advise the plugin to strip it from the output by adding the following lines to your `_config.yml`:
 
 ```yaml
@@ -62,12 +53,15 @@ mathjax_csp:
   strip_css: true
 ```
 
-Configuration for MathJax is also available:
+Other configuration options for MathJax are also available:
 
-| Key              | Description                                                  | Default                                                      |
-| ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| `em_size`        | Em-size, in pixels                                           | `12`                                                          |
-| `ex_size`        | Ex-size, in pixels                                           | `6`                                                          |
+| Key              | Description                                    | Default |
+| ---------------- | ---------------------------------------------- | ------- |
+| `em_size`        | Em-size, in pixels                             | `12`    |
+| `ex_size`        | Ex-size, in pixels                             | `6`     |
+| `single_dollars` | Allow single-dollar delimiters for inline math | `false` |
+| `output`         | Output format: `SVG` or `CommonHTML`           | `SVG`   |
+
 
 ## Local testing
 
