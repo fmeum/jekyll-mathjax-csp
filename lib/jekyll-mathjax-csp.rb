@@ -131,8 +131,8 @@ module Jekyll
           Jekyll.logger.abort_with "", "style injection."
         end
 
-        mathjaxify_output = run_mathjaxify(config, doc.output)
-        parsed_doc = Nokogiri::HTML::Document.parse(mathjaxify_output)
+        mathjaxify_response = JSON.parse(run_mathjaxify(config, { doc.path => doc.output}.to_json))
+        parsed_doc = Nokogiri::HTML::Document.parse(mathjaxify_response[doc.path])
         last_child = parsed_doc.at_css("head").last_element_child()
         if last_child.name == "style"
           # Set strip_css to true in _config.yml if you load the styles MathJax adds to the head
