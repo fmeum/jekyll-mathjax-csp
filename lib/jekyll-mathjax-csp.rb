@@ -1,3 +1,4 @@
+# coding: utf-8
 # Server-side, CSP-aware math rendering for Jekyll using MathJax's node API
 #
 # The MIT License (MIT)
@@ -150,6 +151,75 @@ module Jekyll
         doc.output = parsed_doc.to_html
       end
 
+      # Run the MathJax node backend on a JSON input containing an file: HTML map
+      def run_mathjaxify_batch(config, input)
+        mathified = ""
+        exit_status = 0
+        command = "node #{Gem.bin_path("jekyll-mathjax-csp", "mathjaxify")}"
+
+        FIELDS.each do |name, flag|
+          unless config[name].nil?
+            if [true, false].include? config[name]
+              command << " " << flag
+            else
+              command << " " << flag << " " << config[name].to_s
+            end
+          end
+        end
+
+        node_path = Dir.pwd + "/node_modules"
+        Jekyll.logger.info "mathjax_csp:", "starting node #{command}"
+        mathified, status = Open3.capture2({"NODE_PATH" => node_path}, command, stdin_data: input)
+        return mathified unless status != 0
+        Jekyll.logger.abort_with "mathjax_csp:", "Failed to execute 'bin/mathjaxify'"
+      end
+
+      # Render math in batch for all documents
+      def mathify_batch(docs, config)
+        docs = docs.select { |d| Jekyll::Mathifier.mathable?(d) } # can be mathified?
+                   .select { |d| MATH_TAG_REGEX.match?(d.output) } # needs mathifying?
+                   .reduce({}) { |h, d| h.merge!(d.path => d) } # use #path to identify a doc
+        return if docs.empty?
+
+        Jekyll.logger.info "mathjax_csp:", "Found #{docs.length} documents."
+
+        docs.each do |path, doc|
+          Jekyll.logger.info "Checking math:", path
+          parsed_doc = Nokogiri::HTML::Document.parse(doc.output)
+          # Ensure that all styles we pick up weren't present before MathJax ran
+          unless parsed_doc.css("svg[style],mjx-container[style]").empty?
+            Jekyll.logger.error "mathjax_csp:", "Inline style on <svg> or <mjx-container> element present"
+            Jekyll.logger.error "", "before rendering math due to misconfiguration or server-side"
+            Jekyll.logger.abort_with "", "style injection."
+          end
+        end
+
+        mathjaxify_input = docs.reduce({}) { |h, (path, doc)| h.merge!(path => doc.output) }
+                               .to_json
+        mathified_docs = JSON.parse(run_mathjaxify_batch(config, mathjaxify_input))
+
+        mathified_docs.each do |path, mathified_html|
+          parsed_doc = Nokogiri::HTML::Document.parse(mathified_html)
+          last_child = parsed_doc.at_css("head").last_element_child()
+          if last_child.name == "style"
+            # Set strip_css to true in _config.yml if you load the styles MathJax adds to the head
+            # from an external *.css file
+            if config["strip_css"]
+              Jekyll.logger.info "", "Remember to <link> in external stylesheet!"
+              last_child.remove
+            else
+              hashStyleTag(last_child)
+            end
+          end
+
+          style_attributes = extractStyleAttributes(parsed_doc)
+          compileStyleElement(parsed_doc, style_attributes)
+          docs[path].output = parsed_doc.to_html
+        end
+
+        Jekyll.logger.info "mathjax_csp:", "Mathified #{mathified_docs.length} documents."
+      end
+
       def mathable?(doc)
         (doc.is_a?(Jekyll::Page) || doc.write?) &&
           doc.output_ext == ".html" || (doc.permalink && doc.permalink.end_with?("/"))
@@ -204,10 +274,8 @@ end
 
 # Replace math blocks with SVG renderings using mathjaxify and collect inline styles in a
 # single <style> element
-Jekyll::Hooks.register [:documents, :pages], :post_render do |doc|
-  if Jekyll::Mathifier.mathable?(doc)
-    Jekyll::Mathifier.mathify(doc, doc.site.config["mathjax_csp"] || {})
-  end
+Jekyll::Hooks.register :site, :post_render do |site|
+  Jekyll::Mathifier.mathify_batch(site.posts.docs + site.pages, site.config["mathjax_csp"] || {})
 end
 
 # Run over all documents with {% mathjax_sources %} Liquid tags again and insert the list of CSP
