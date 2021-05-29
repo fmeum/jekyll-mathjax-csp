@@ -86,7 +86,7 @@ module Jekyll
       end
 
       # Run the MathJax node backend on a JSON input containing an file: HTML map
-      def run_mathjaxify_batch(config, input)
+      def run_mathjaxify(config, input)
         mathified = ""
         exit_status = 0
         command = "node #{Gem.bin_path("jekyll-mathjax-csp", "mathjaxify")}"
@@ -109,7 +109,7 @@ module Jekyll
       end
 
       # Render math in batch for all documents
-      def mathify_batch(docs, config)
+      def mathify(docs, config)
         docs = docs.select { |d| Jekyll::Mathifier.mathable?(d) } # can be mathified?
                    .select { |d| MATH_TAG_REGEX.match?(d.output) } # needs mathifying?
                    .reduce({}) { |h, d| h.merge!(d.path => d) } # use #path to identify a doc
@@ -130,7 +130,7 @@ module Jekyll
 
         mathjaxify_input = docs.reduce({}) { |h, (path, doc)| h.merge!(path => doc.output) }
                                .to_json
-        mathified_docs = JSON.parse(run_mathjaxify_batch(config, mathjaxify_input))
+        mathified_docs = JSON.parse(run_mathjaxify(config, mathjaxify_input))
 
         mathified_docs.each do |path, mathified_html|
           parsed_doc = Nokogiri::HTML::Document.parse(mathified_html)
@@ -209,7 +209,7 @@ end
 # Replace math blocks with SVG renderings using mathjaxify and collect inline styles in a
 # single <style> element
 Jekyll::Hooks.register :site, :post_render do |site|
-  Jekyll::Mathifier.mathify_batch(site.posts.docs + site.pages, site.config["mathjax_csp"] || {})
+  Jekyll::Mathifier.mathify(site.posts.docs + site.pages, site.config["mathjax_csp"] || {})
 end
 
 # Run over all documents with {% mathjax_sources %} Liquid tags again and insert the list of CSP
