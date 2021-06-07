@@ -68,7 +68,7 @@ require('mathjax-full/js/util/entities/all.js');
 //
 var argv = require('yargs')
     .demand(0).strict()
-    .usage('$0 [options] < input.html > output.html')
+    .usage('$0 [options] < input.json > output.json')
     .options({
         em: {
             default: 12,
@@ -90,9 +90,9 @@ var argv = require('yargs')
     .argv;
 
 //
-//  Read HTML from stdin
+//  Read input JSON from stdin
 //
-const htmlfile = require('fs').readFileSync(0, 'utf8');
+const inputDocs = JSON.parse(require('fs').readFileSync(0, 'utf8'));
 
 //
 //  Create DOM adaptor and register it for HTML documents
@@ -123,24 +123,35 @@ function getOutput() {
     }
 }
 
-const html = mathjax.document(htmlfile, {InputJax: getInput(), OutputJax: getOutput()});
+const outputDocs = {};
 
-//
-//  Typeset the document
-//
-html.render();
+// For each input path and HTML doc
+Object.keys(inputDocs).forEach((path) => {
+    console.error("mathjaxify:", path);
+    const inputHTML = inputDocs[path];
+    const html = mathjax.document(inputHTML, {InputJax: getInput(), OutputJax: getOutput()});
 
-//
-//  If no math was found on the page, remove the stylesheet and font cache (if any)
-//
-if (argv.output === "SVG" && html.math.toArray().length === 0) {
-  adaptor.remove(html.outputJax.svgStyles);
-  const cache = adaptor.elementById(adaptor.body(html.document), 'MJX-SVG-global-cache');
-  if (cache) adaptor.remove(cache);
-}
+    //
+    //  Typeset the document
+    //
+    html.render();
 
-//
-//  Output the resulting HTML
-//
-console.log(adaptor.doctype(html.document));
-console.log(adaptor.outerHTML(adaptor.root(html.document)));
+    //
+    //  If no math was found on the page, remove the stylesheet and font cache (if any)
+    //
+    if (argv.output === "SVG" && html.math.toArray().length === 0) {
+        adaptor.remove(html.outputJax.svgStyles);
+        const cache = adaptor.elementById(adaptor.body(html.document), 'MJX-SVG-global-cache');
+        if (cache) adaptor.remove(cache);
+    }
+
+    //
+    //  Store the resulting HTML in the output
+    //
+    outputDocs[path] = adaptor.doctype(html.document)
+                        + "\n"
+                        + adaptor.outerHTML(adaptor.root(html.document));
+});
+
+// Write out all the documents in JSON format
+console.log(JSON.stringify(outputDocs));
