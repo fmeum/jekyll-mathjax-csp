@@ -1,6 +1,6 @@
 # jekyll-mathjax-csp
 
-Render math on the server using the [MathJax 3 node API]((https://github.com/mathjax/MathJax-demos-node), while maintaining a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) without `'unsafe-inline'`.
+Render math on the server using the [MathJax 3 node API](https://github.com/mathjax/MathJax-demos-node), while maintaining a strict [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) without `'unsafe-inline'`.
 
 While MathJax is well equipped to render beautiful math in a browser, letting it run in the client has two distinctive disadvantages: It is quite CPU-intensive and crucially relies on inline `style` attributes and elements. This Jekyll plugin aims to resolve both issues at once by rendering formulas to SVG images on the server, extracting all generated `style` attributes into a single `<style>` element in the head of the page and computing a hash over its content that can then be added as a CSP `style-src`.
 
