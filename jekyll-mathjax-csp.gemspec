@@ -3,9 +3,9 @@ Gem::Specification.new do |s|
   s.description = "Server-side MathJax rendering for Jekyll with a strict CSP"
   s.summary = "Server-side MathJax & CSP for Jekyll"
   s.version = "2.0.0"
-  s.author = "Fabian Henneke"
-  s.email = "fabian@hen.ne.ke"
-  s.homepage = "https://github.com/FabianHenneke/jekyll-mathjax-csp"
+  s.author = "Fabian Meumertzheim"
+  s.email = "fabian@meumertzhe.im"
+  s.homepage = "https://github.com/fmeum/jekyll-mathjax-csp"
 
   s.license = "MIT"
   s.files = [
